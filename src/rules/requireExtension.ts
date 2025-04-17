@@ -342,6 +342,9 @@ export default createRule<Options, MessageIds>({
           ignorePackages: {
             type: 'boolean',
           },
+          overrideExtension: {
+            type: 'boolean',
+          },
         },
         type: 'object',
       },
