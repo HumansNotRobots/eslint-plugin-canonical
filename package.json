@@ -70,6 +70,7 @@
     "generate": "gitdown ./.README/README.md --output-file ./README.md && tsx ./src/bin/addAssertions",
     "lint": "eslint .",
     "prepare": "husky install",
+    "prepack": "rm -fr ./dist && tsc --project ./tsconfig.build.json",
     "test": "mocha --require tsx './tests/rules/*'"
   },
   "version": "0.0.0-development"
