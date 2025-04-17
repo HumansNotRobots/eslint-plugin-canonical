@@ -16,11 +16,13 @@ const defaultOptions = {
   // * We need to consider that the resolved path can be @types/.
   // * We need to consider that the package.json might have package.json#exports rules.
   ignorePackages: false,
+  overrideExtension: true,
 };
 
 type Options = [
   {
     ignorePackages?: boolean;
+    overrideExtension?: boolean;
   },
 ];
 
@@ -39,7 +41,7 @@ const fixRelativeImport = (
   fixer: TSESLint.RuleFixer,
   node: Node,
   fileName: string,
-  overrideExtension: boolean = true,
+  overrideExtension: boolean,
 ) => {
   if (!node.source) {
     throw new Error('Node has no source');
@@ -75,7 +77,7 @@ const fixPathImport = (
   node: Node,
   fileName: string,
   resolvedImportPath: string,
-  overrideExtension: boolean = true,
+  overrideExtension: boolean,
 ) => {
   if (!node.source) {
     throw new Error('Node has no source');
@@ -152,6 +154,7 @@ const handleRelativePath = (
   context: TSESLint.RuleContext<'extensionMissing', Options>,
   node: Node,
   importPath: string,
+  overrideExtension: boolean,
 ) => {
   if (!importPath.startsWith('.')) {
     return false;
@@ -166,7 +169,7 @@ const handleRelativePath = (
 
   context.report({
     fix(fixer) {
-      return fixRelativeImport(fixer, node, filename);
+      return fixRelativeImport(fixer, node, filename, overrideExtension);
     },
     messageId: 'extensionMissing',
     node,
@@ -189,6 +192,7 @@ const handleAliasPath = (
   node: Node,
   importPath: string,
   ignorePackages: boolean,
+  overrideExtension: boolean,
 ) => {
   // @ts-expect-error we know this setting exists
   const project = (context.settings['import/resolver']?.typescript?.project ??
@@ -273,6 +277,7 @@ const handleAliasPath = (
         node,
         filename,
         resolvedImportPath,
+        overrideExtension,
       );
     },
     messageId: 'extensionMissing',
@@ -286,6 +291,8 @@ export default createRule<Options, MessageIds>({
   create: (context, [options]) => {
     const ignorePackages =
       options.ignorePackages ?? defaultOptions.ignorePackages;
+    const overrideExtension =
+      options.overrideExtension ?? defaultOptions.overrideExtension;
 
     const rule = (node: Node) => {
       if (!node.source) {
@@ -308,8 +315,8 @@ export default createRule<Options, MessageIds>({
       }
 
       void (
-        handleRelativePath(context, node, importPath) ||
-        handleAliasPath(context, node, importPath, ignorePackages)
+        handleRelativePath(context, node, importPath, overrideExtension) ||
+        handleAliasPath(context, node, importPath, ignorePackages, overrideExtension)
       );
     };
 
@@ -333,6 +340,9 @@ export default createRule<Options, MessageIds>({
         additionalProperties: false,
         properties: {
           ignorePackages: {
+            type: 'boolean',
+          },
+          overrideExtension: {
             type: 'boolean',
           },
         },
